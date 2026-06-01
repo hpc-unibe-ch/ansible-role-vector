@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  namespace: ubelix
+  role_name: vector
+  author: hpc-unibe-ch
+  description: Install and configure Vector log agent for the UBELIX HPC cluster
+  company: University of Bern HPC
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - 9

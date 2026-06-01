@@ -1,0 +1,20 @@
+# Vector configuration for cluster nodes (sender role)
+# Reads from local journald and forwards to the log aggregator via mTLS.
+
+sources:
+  journald:
+    type: journald
+
+sinks:
+  to_aggregator:
+    type: vector
+    inputs:
+      - journald
+    address: "{{ vector_aggregator_address }}"
+    tls:
+      enabled: true
+      ca_file: "{{ vector_ca_file }}"
+      crt_file: "{{ vector_cert_file }}"
+      key_file: "{{ vector_key_file }}"
+      verify_certificate: true
+      verify_hostname: true

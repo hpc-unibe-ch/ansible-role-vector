@@ -1,0 +1,6 @@
+---
+- name: Install Vector
+  ansible.builtin.include_tasks: install.yml
+
+- name: Configure Vector
+  ansible.builtin.include_tasks: configure.yml

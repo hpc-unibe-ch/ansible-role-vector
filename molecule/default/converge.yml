@@ -1,0 +1,44 @@
+---
+- name: Converge
+  hosts: all
+  pre_tasks:
+    - name: Create TLS directory
+      ansible.builtin.file:
+        path: /etc/vector/tls
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Create dummy CA certificate
+      ansible.builtin.copy:
+        dest: /etc/vector/tls/ubelix-ca.pem
+        content: "# dummy CA cert for molecule testing\n"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create dummy host certificate
+      ansible.builtin.copy:
+        dest: /etc/vector/tls/molecule-test.pem
+        content: "# dummy host cert for molecule testing\n"
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create dummy host key
+      ansible.builtin.copy:
+        dest: /etc/vector/tls/molecule-test.key
+        content: "# dummy host key for molecule testing\n"
+        owner: root
+        group: root
+        mode: '0600'
+
+  roles:
+    - role: ubelix.vector
+      vars:
+        vector_role: sender
+        vector_aggregator_address: "log.example.com:9000"
+        vector_ca_file: "/etc/vector/tls/ubelix-ca.pem"
+        vector_cert_file: "/etc/vector/tls/molecule-test.pem"
+        vector_key_file: "/etc/vector/tls/molecule-test.key"

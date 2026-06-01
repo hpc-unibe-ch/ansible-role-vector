@@ -1,0 +1,81 @@
+# Vector configuration for the log aggregator (log01)
+# Receives from all cluster nodes via mTLS, reads local journald,
+# and ships everything to Elasticsearch.
+
+sources:
+  from_nodes:
+    type: vector
+    address: "0.0.0.0:{{ vector_listen_port }}"
+    tls:
+      enabled: true
+      ca_file: "{{ vector_ca_file }}"
+      crt_file: "{{ vector_cert_file }}"
+      key_file: "{{ vector_key_file }}"
+      verify_certificate: true  # enforces mutual TLS from all senders
+
+  local_journald:
+    type: journald
+
+transforms:
+  normalize_fields:
+    type: remap
+    inputs:
+      - from_nodes
+      - local_journald
+    source: |
+      # Capture essential fields before wiping raw journald keys
+      ts        = .timestamp
+      msg       = .message
+      host_name = .host
+      unit      = ._SYSTEMD_UNIT
+      pid       = ._PID
+      comm      = .SYSLOG_IDENTIFIER
+      if comm == null { comm = ._COMM }
+      priority  = .PRIORITY
+
+      # Rebuild as a minimal ECS-compatible event (eliminates ~500 raw journal fields)
+      . = {}
+
+      # @timestamp must always reflect the original journal event time
+      ."@timestamp" = if ts != null { ts } else { now() }
+
+      if msg       != null { .message = msg }
+
+      # Nested ECS objects require parent initialization after event rebuild
+      if host_name != null {
+        .host = {}
+        .host.name = to_string!(host_name)
+      }
+      if unit != null {
+        .systemd = {}
+        .systemd.unit = to_string!(unit)
+      }
+      if comm != null || pid != null {
+        .process = {}
+        if comm != null { .process.name = to_string!(comm) }
+        if pid  != null { .process.pid  = to_int!(pid) }
+      }
+      if priority != null {
+        .log = { "syslog": { "severity": { "code": to_int!(priority) } } }
+      }
+
+sinks:
+  elasticsearch:
+    type: elasticsearch
+    inputs:
+      - normalize_fields
+    endpoints:
+      - "{{ vector_es_endpoint }}"
+    bulk:
+      index: "{{ vector_es_index }}"
+      action: create
+    auth:
+      strategy: basic
+      user: "{{ vector_es_username }}"
+      password: "{{ vector_es_password }}"
+    tls:
+      verify_certificate: true
+    buffer:
+      type: disk
+      max_size: {{ vector_es_buffer_max_size }}
+      when_full: block

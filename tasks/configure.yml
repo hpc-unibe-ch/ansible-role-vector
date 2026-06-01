@@ -1,0 +1,16 @@
+---
+- name: Deploy Vector configuration
+  ansible.builtin.template:
+    src: "vector_{{ vector_role }}.yaml.j2"
+    dest: /etc/vector/vector.yaml
+    owner: root
+    group: vector
+    mode: '0640'
+  notify: Restart vector
+
+- name: Enable and start Vector service
+  ansible.builtin.systemd:
+    name: vector.service
+    enabled: true
+    state: started
+    daemon_reload: true

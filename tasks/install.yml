@@ -1,0 +1,34 @@
+---
+- name: Add Vector RPM repository
+  ansible.builtin.yum_repository:
+    name: vectordev
+    description: Vector.dev stable repository
+    baseurl: https://yum.vector.dev/stable/vector-0/{{ ansible_architecture }}
+    gpgkey: https://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public
+    gpgcheck: true
+    enabled: true
+
+- name: Install Vector package
+  ansible.builtin.package:
+    name: vector
+    state: present
+
+- name: Create vector group
+  ansible.builtin.group:
+    name: vector
+    system: true
+    state: present
+
+- name: Ensure vector user belongs to systemd-journal group (for journald access)
+  ansible.builtin.user:
+    name: vector
+    groups: systemd-journal
+    append: true
+
+- name: Ensure Vector data directory is owned by vector user
+  ansible.builtin.file:
+    path: /var/lib/vector
+    state: directory
+    owner: vector
+    group: vector
+    mode: '0750'

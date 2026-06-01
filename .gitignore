@@ -1,0 +1,14 @@
+# Ansible
+*.retry
+.roles/
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+
+# macOS
+.DS_Store
+
+# Linux
+*~

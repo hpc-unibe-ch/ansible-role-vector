@@ -1,0 +1,29 @@
+---
+- name: Verify
+  hosts: all
+  tasks:
+    - name: Check Vector config file is deployed
+      ansible.builtin.stat:
+        path: /etc/vector/vector.yaml
+      register: vector_config
+
+    - name: Assert Vector config exists
+      ansible.builtin.assert:
+        that:
+          - vector_config.stat.exists
+        fail_msg: "/etc/vector/vector.yaml was not created by the role"
+
+    - name: Check Vector config contains aggregator address
+      ansible.builtin.command: grep -q "log.example.com:9000" /etc/vector/vector.yaml
+      changed_when: false
+
+    - name: Check Vector service is enabled
+      ansible.builtin.systemd:
+        name: vector
+      register: vector_service
+
+    - name: Assert Vector service is enabled
+      ansible.builtin.assert:
+        that:
+          - vector_service.status.UnitFileState == "enabled"
+        fail_msg: "vector.service is not enabled"

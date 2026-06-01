@@ -1,0 +1,23 @@
+---
+# Role: sender (cluster nodes) or aggregator (log server)
+vector_role: sender
+
+# Port the aggregator listens on (vector native protocol)
+vector_listen_port: 9000
+
+# Address nodes send logs to (host:port)
+vector_aggregator_address: ""
+
+# TLS certificate paths (set per-host in playbook/inventory)
+vector_ca_file: "/etc/ssl/certs/ubelix-ca.pem"
+vector_cert_file: "/etc/ssl/certs/{{ ansible_fqdn }}.pem"
+vector_key_file: "/etc/ssl/certs/{{ ansible_fqdn }}.key"
+
+# Elasticsearch settings (aggregator only)
+vector_es_endpoint: ""
+vector_es_index: ""
+vector_es_username: ""
+vector_es_password: ""
+
+# Disk buffer size for the ES sink on the aggregator (bytes, default 256MiB)
+vector_es_buffer_max_size: 268435488
