@@ -61,7 +61,7 @@
           - -subj
           - /CN=molecule-test
       args:
-        creates: /etc/vector/tls/molecule-test.csr
+        creates: /etc/vector/tls/molecule-test.key
 
     - name: Create Molecule test host certificate
       ansible.builtin.command:
