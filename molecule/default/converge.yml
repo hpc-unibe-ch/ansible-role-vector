@@ -16,6 +16,15 @@
         system: true
         state: present
 
+    - name: Create vector user for TLS file access
+      ansible.builtin.user:
+        name: vector
+        group: vector
+        system: true
+        create_home: false
+        shell: /sbin/nologin
+        state: present
+
     - name: Create Molecule test CA certificate
       ansible.builtin.command:
         argv:
@@ -74,19 +83,34 @@
       args:
         creates: /etc/vector/tls/molecule-test.pem
 
+    - name: Remove temporary Molecule TLS signing files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/vector/tls/ubelix-ca.key
+        - /etc/vector/tls/molecule-test.csr
+        - /etc/vector/tls/ubelix-ca.srl
+
     - name: Set Molecule TLS file permissions
       ansible.builtin.file:
         path: "{{ item.path }}"
-        owner: root
-        group: vector
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
         mode: "{{ item.mode }}"
       loop:
         - path: /etc/vector/tls/ubelix-ca.pem
-          mode: '0640'
+          owner: root
+          group: root
+          mode: '0644'
         - path: /etc/vector/tls/molecule-test.pem
-          mode: '0640'
+          owner: root
+          group: root
+          mode: '0644'
         - path: /etc/vector/tls/molecule-test.key
-          mode: '0640'
+          owner: vector
+          group: vector
+          mode: '0600'
 
   roles:
     - role: ubelix.vector
