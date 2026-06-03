@@ -10,29 +10,83 @@
         group: root
         mode: '0755'
 
-    - name: Create dummy CA certificate
-      ansible.builtin.copy:
-        dest: /etc/vector/tls/ubelix-ca.pem
-        content: "# dummy CA cert for molecule testing\n"
-        owner: root
-        group: root
-        mode: '0644'
+    - name: Create vector group for TLS file access
+      ansible.builtin.group:
+        name: vector
+        system: true
+        state: present
 
-    - name: Create dummy host certificate
-      ansible.builtin.copy:
-        dest: /etc/vector/tls/molecule-test.pem
-        content: "# dummy host cert for molecule testing\n"
-        owner: root
-        group: root
-        mode: '0644'
+    - name: Create Molecule test CA certificate
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - req
+          - -x509
+          - -newkey
+          - rsa:2048
+          - -nodes
+          - -keyout
+          - /etc/vector/tls/ubelix-ca.key
+          - -out
+          - /etc/vector/tls/ubelix-ca.pem
+          - -days
+          - '1'
+          - -subj
+          - /CN=Molecule Vector Test CA
+      args:
+        creates: /etc/vector/tls/ubelix-ca.pem
 
-    - name: Create dummy host key
-      ansible.builtin.copy:
-        dest: /etc/vector/tls/molecule-test.key
-        content: "# dummy host key for molecule testing\n"
+    - name: Create Molecule test host key and CSR
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - req
+          - -new
+          - -newkey
+          - rsa:2048
+          - -nodes
+          - -keyout
+          - /etc/vector/tls/molecule-test.key
+          - -out
+          - /etc/vector/tls/molecule-test.csr
+          - -subj
+          - /CN=molecule-test
+      args:
+        creates: /etc/vector/tls/molecule-test.csr
+
+    - name: Create Molecule test host certificate
+      ansible.builtin.command:
+        argv:
+          - openssl
+          - x509
+          - -req
+          - -in
+          - /etc/vector/tls/molecule-test.csr
+          - -CA
+          - /etc/vector/tls/ubelix-ca.pem
+          - -CAkey
+          - /etc/vector/tls/ubelix-ca.key
+          - -CAcreateserial
+          - -out
+          - /etc/vector/tls/molecule-test.pem
+          - -days
+          - '1'
+      args:
+        creates: /etc/vector/tls/molecule-test.pem
+
+    - name: Set Molecule TLS file permissions
+      ansible.builtin.file:
+        path: "{{ item.path }}"
         owner: root
-        group: root
-        mode: '0600'
+        group: vector
+        mode: "{{ item.mode }}"
+      loop:
+        - path: /etc/vector/tls/ubelix-ca.pem
+          mode: '0640'
+        - path: /etc/vector/tls/molecule-test.pem
+          mode: '0640'
+        - path: /etc/vector/tls/molecule-test.key
+          mode: '0640'
 
   roles:
     - role: ubelix.vector
