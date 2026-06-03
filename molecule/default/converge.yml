@@ -30,7 +30,7 @@
           - -out
           - /etc/vector/tls/ubelix-ca.pem
           - -days
-          - '1'
+          - '7'
           - -subj
           - /CN=Molecule Vector Test CA
       args:
@@ -70,7 +70,7 @@
           - -out
           - /etc/vector/tls/molecule-test.pem
           - -days
-          - '1'
+          - '7'
       args:
         creates: /etc/vector/tls/molecule-test.pem
 
