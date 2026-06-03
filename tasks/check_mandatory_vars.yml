@@ -1,0 +1,33 @@
+---
+- name: Make sure vector_role is valid
+  ansible.builtin.assert:
+    that:
+      - vector_role is defined
+      - vector_role in ['sender', 'aggregator']
+    quiet: true
+    fail_msg: 'The variable "vector_role" must be set to "sender" or "aggregator"'
+
+- name: Make sure all required sender variables are defined
+  ansible.builtin.assert:
+    that:
+      - item is defined
+      - item | length > 0
+    quiet: true
+    fail_msg: 'The variable "{{ item }}" is required when vector_role is "sender"'
+  loop:
+    - vector_aggregator_address
+  when: vector_role == 'sender'
+
+- name: Make sure all required aggregator variables are defined
+  ansible.builtin.assert:
+    that:
+      - item is defined
+      - item | length > 0
+    quiet: true
+    fail_msg: 'The variable "{{ item }}" is required when vector_role is "aggregator"'
+  loop:
+    - vector_es_endpoint
+    - vector_es_index
+    - vector_es_username
+    - vector_es_password
+  when: vector_role == 'aggregator'

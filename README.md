@@ -38,36 +38,169 @@ The role is deployed in two modes controlled by `vector_role`:
 | `sender` | All cluster nodes | Reads local journald, forwards to aggregator via mTLS |
 | `aggregator` | Log server (`log01`) | Receives from all senders, reads own journal, ships to Elasticsearch |
 
-## Variables
+## Requirements
 
-### Common (all hosts)
+No prerequisites necessary at the moment.
 
-| Variable | Default | Description |
-|---|---|---|
-| `vector_role` | `sender` | Role mode: `sender` or `aggregator` |
-| `vector_ca_file` | `/etc/ssl/certs/ubelix-ca.pem` | Path to the CA certificate for mTLS |
-| `vector_cert_file` | `/etc/ssl/certs/{{ ansible_fqdn }}.pem` | Path to the host TLS certificate |
-| `vector_key_file` | `/etc/ssl/certs/{{ ansible_fqdn }}.key` | Path to the host TLS private key |
+## Role Variables
+
+Available variables are listed below, along with default values (see also `defaults/main.yml`):
+<!--
+**STYLE GUIDE:**
+* All variables should start with the role name (e.g. `vector_`)
+* Variables that are private to the role and only important to people developing the role should be set in `vars/main.yml` and start with `__vector_`
+-->
+
+<!-- Enter ALL mandatory variables into `tasks/check_mandatory_vars.yml` so their presence gets checked before each run -->
+
+### vector_role
+
+The deployment mode. Controls which Vector configuration template is applied.
+
+```yaml
+vector_role: sender
+```
+
+**Optional:** Yes
+
+**Default value:** `sender`
+
+### vector_ca_file
+
+Path to the CA certificate used for mutual TLS (mTLS) between senders and the aggregator.
+
+```yaml
+vector_ca_file: "/etc/ssl/certs/ubelix-ca.pem"
+```
+
+**Optional:** Yes
+
+**Default value:** `/etc/ssl/certs/ubelix-ca.pem`
 
 > **Note**: In production the TLS files are stored under `/etc/vector/tls/` to avoid SELinux
 > label conflicts (`cert_t`) that prevent the `vector` process from reading `/etc/ssl/certs/`.
 
-### Sender only
+### vector_cert_file
 
-| Variable | Default | Description |
-|---|---|---|
-| `vector_aggregator_address` | `""` | `host:port` of the aggregator to forward logs to |
+Path to the host TLS certificate used for mTLS.
 
-### Aggregator only
+```yaml
+vector_cert_file: "/etc/ssl/certs/{{ ansible_fqdn }}.pem"
+```
 
-| Variable | Default | Description |
-|---|---|---|
-| `vector_listen_port` | `9000` | TCP port to receive gRPC connections from senders |
-| `vector_es_endpoint` | `""` | Elasticsearch HTTPS endpoint URL |
-| `vector_es_index` | `""` | Target data stream / index name |
-| `vector_es_username` | `""` | Elasticsearch username |
-| `vector_es_password` | `""` | Elasticsearch password (use Ansible Vault) |
-| `vector_es_buffer_max_size` | `268435488` | Disk buffer size in bytes (default: 256 MiB) |
+**Optional:** Yes
+
+**Default value:** `/etc/ssl/certs/{{ ansible_fqdn }}.pem`
+
+### vector_key_file
+
+Path to the host TLS private key used for mTLS.
+
+```yaml
+vector_key_file: "/etc/ssl/certs/{{ ansible_fqdn }}.key"
+```
+
+**Optional:** Yes
+
+**Default value:** `/etc/ssl/certs/{{ ansible_fqdn }}.key`
+
+### vector_aggregator_address
+
+The `host:port` of the aggregator that sender nodes forward logs to. Required when `vector_role` is `sender`.
+
+```yaml
+vector_aggregator_address: "log.example.com:9000"
+```
+
+**Optional:** No (required when `vector_role == sender`)
+
+**Default value:** `""`
+
+### vector_listen_port
+
+The TCP port on which the aggregator listens for incoming gRPC connections from senders.
+
+```yaml
+vector_listen_port: 9000
+```
+
+**Optional:** Yes
+
+**Default value:** `9000`
+
+### vector_es_endpoint
+
+Elasticsearch HTTPS endpoint URL. Required when `vector_role` is `aggregator`.
+
+```yaml
+vector_es_endpoint: "https://elastic.example.com:9200"
+```
+
+**Optional:** No (required when `vector_role == aggregator`)
+
+**Default value:** `""`
+
+### vector_es_index
+
+Target Elasticsearch data stream or index name. Required when `vector_role` is `aggregator`.
+
+```yaml
+vector_es_index: "hpc_prod_logs-journald"
+```
+
+**Optional:** No (required when `vector_role == aggregator`)
+
+**Default value:** `""`
+
+### vector_es_username
+
+Elasticsearch username for the aggregator sink. Required when `vector_role` is `aggregator`.
+
+```yaml
+vector_es_username: "vector"
+```
+
+**Optional:** No (required when `vector_role == aggregator`)
+
+**Default value:** `""`
+
+### vector_es_password
+
+Elasticsearch password for the aggregator sink. Required when `vector_role` is `aggregator`. Use Ansible Vault to encrypt this value.
+
+```yaml
+vector_es_password: "{{ vault_vector_es_password }}"
+```
+
+**Optional:** No (required when `vector_role == aggregator`)
+
+**Default value:** `""`
+
+### vector_es_buffer_max_size
+
+Disk buffer size in bytes for the Elasticsearch sink on the aggregator.
+
+```yaml
+vector_es_buffer_max_size: 268435488
+```
+
+**Optional:** Yes
+
+**Default value:** `268435488` (256 MiB)
+
+## Example Playbook
+
+```yaml
+- hosts: cluster_nodes
+  roles:
+    - role: ubelix.vector
+      vars:
+        vector_role: sender
+        vector_aggregator_address: "log.example.com:9000"
+        vector_ca_file: "/etc/vector/tls/ubelix-ca.pem"
+        vector_cert_file: "/etc/vector/tls/{{ ansible_fqdn }}.pem"
+        vector_key_file: "/etc/vector/tls/{{ ansible_fqdn }}.key"
+```
 
 ## TLS / mTLS
 
@@ -156,3 +289,17 @@ discarded to avoid field explosion.
 | `/etc/vector/tls/` | TLS certificates and CA cert for mTLS |
 | `/var/lib/vector/` | Vector data directory: journal cursor, disk buffer |
 | `/var/lib/vector/buffer/` | Elasticsearch disk buffer (aggregator only) |
+
+## Compatibility
+
+This role has been written for and tested on and is therefore compatible with:
+
+* rockylinux9
+
+## License
+
+MIT
+
+## Author Information
+
+The role was created in 2026 by the IT-Services Office of the University of Bern

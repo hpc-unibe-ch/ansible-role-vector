@@ -3,8 +3,8 @@
   ansible.builtin.yum_repository:
     name: vectordev
     description: Vector.dev stable repository
-    baseurl: https://yum.vector.dev/stable/vector-0/{{ ansible_architecture }}
-    gpgkey: https://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public
+    baseurl: "{{ __vector_repo_baseurl }}"
+    gpgkey: "{{ __vector_gpgkey }}"
     gpgcheck: true
     enabled: true
 

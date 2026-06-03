@@ -1,0 +1,4 @@
+---
+
+__vector_repo_baseurl: https://yum.vector.dev/stable/vector-0/{{ ansible_architecture }}
+__vector_gpgkey: https://keys.datadoghq.com/DATADOG_RPM_KEY_CURRENT.public

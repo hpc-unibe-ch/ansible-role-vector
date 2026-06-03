@@ -1,2 +1,3 @@
+# In this file, all variables that are internal to the role should be defined.
+# All variables that are internal to the role should start with `__vector_`
 ---
-# Internal role variables (not intended for user override)

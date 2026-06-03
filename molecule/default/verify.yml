@@ -1,21 +1,38 @@
 ---
+# This is an example playbook to execute Ansible tests.
+
 - name: Verify
   hosts: all
+  gather_facts: false
+  vars:
+    expected_aggregator_address: "log.example.com:9000"
   tasks:
-    - name: Check Vector config file is deployed
+    - name: Check Vector configuration file metadata
       ansible.builtin.stat:
         path: /etc/vector/vector.yaml
       register: vector_config
 
-    - name: Assert Vector config exists
+    - name: Assert Vector configuration file exists with correct mode
       ansible.builtin.assert:
         that:
           - vector_config.stat.exists
-        fail_msg: "/etc/vector/vector.yaml was not created by the role"
+          - vector_config.stat.mode == '0640'
+        fail_msg: "/etc/vector/vector.yaml is missing or does not have mode 0640"
 
-    - name: Check Vector config contains aggregator address
-      ansible.builtin.command: grep -q "log.example.com:9000" /etc/vector/vector.yaml
-      changed_when: false
+    - name: Read Vector configuration file
+      ansible.builtin.slurp:
+        path: /etc/vector/vector.yaml
+      register: vector_config_raw
+
+    - name: Decode rendered configuration content
+      ansible.builtin.set_fact:
+        vector_config_content: "{{ vector_config_raw.content | b64decode }}"
+
+    - name: Assert Vector configuration contains aggregator address
+      ansible.builtin.assert:
+        that:
+          - expected_aggregator_address in vector_config_content
+        fail_msg: "/etc/vector/vector.yaml does not contain the expected aggregator address"
 
     - name: Check Vector service is enabled
       ansible.builtin.systemd:
