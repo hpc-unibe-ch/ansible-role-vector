@@ -253,7 +253,7 @@ events buffered before a restart are re-sent when Elasticsearch recovers.
 > **Note on TLS hostname binding**: The aggregator's TLS certificate uses `ansible_fqdn` as CN
 > and SAN. The sender's `vector_aggregator_address` must match this FQDN. If the two diverge
 > (e.g. after a DNS rename), `verify_hostname: true` on senders will reject the connection.
-> The certificate SANs also include `log.ubelix.unibe.ch` for the log server, allowing a
+> The certificate SANs also include `log.hpc.unibe.ch` for the log server, allowing a
 > future DNS alias to be used as the aggregator address without recertification.
 
 ## Log retention on senders
